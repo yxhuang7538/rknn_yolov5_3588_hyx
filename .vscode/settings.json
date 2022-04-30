@@ -10,6 +10,10 @@
         "xlocnum": "cpp",
         "xutility": "cpp",
         "queue": "cpp",
-        "vector": "cpp"
+        "vector": "cpp",
+        "fstream": "cpp",
+        "atomic": "cpp",
+        "thread": "cpp",
+        "xstring": "cpp"
     }
 }

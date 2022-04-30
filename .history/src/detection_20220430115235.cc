@@ -5,16 +5,21 @@
 #include <string.h>
 #include <fstream>
 #include <iostream>
+#include <fstream>
 #include <math.h>
 #include <atomic>
-#include <thread>
+#include <queue>
+#include <set>
+#include <thread> // 线程库
+#include <mutex>
+#include <chrono>
 #include <sys/time.h>
-#include <sys/stat.h> // 获取文件属性
-#include <dirent.h> // 文件夹操作
+#include <sys/stat.h>
+#include <dirent.h>
 #include <unistd.h>
 #include <dlfcn.h>
 #include "rknn_api.h"
-
+// #include "rknn_api_1808.h"
 #include "im2d.h"
 #include "RgaUtils.h"
 #include "rga.h"
@@ -28,19 +33,8 @@
 
 using namespace std;
 
-static void check_ret(int ret, char string(const char* ret_name)):
-{
-    // 检查ret是否正确并输出，ret_name表示哪一步
-    if (ret < 0)
-    {
-        cout << ret_name << " error ret=" << ret << endl;
-    }
-
-}
-
 static void dump_tensor_attr(rknn_tensor_attr *attr)
 {
-    // 打印模型输入和输出的信息
     printf("  index=%d, name=%s, n_dims=%d, dims=[%d, %d, %d, %d], n_elems=%d, size=%d, fmt=%s, type=%s, qnt_type=%s, "
            "zp=%d, scale=%f\n",
            attr->index, attr->name, attr->n_dims, attr->dims[0], attr->dims[1], attr->dims[2], attr->dims[3],
@@ -48,8 +42,7 @@ static void dump_tensor_attr(rknn_tensor_attr *attr)
            get_qnt_type_string(attr->qnt_type), attr->zp, attr->scale);
 }
 
-// t为结构体，存储了时间信息：1、tv_sec 代表多少秒；2、tv_usec 代表多少微秒， 1000000 微秒 = 1秒
-double __get_us(struct timeval t) { return (t.tv_sec * 1000000 + t.tv_usec);} 
+double __get_us(struct timeval t) { return (t.tv_sec * 1000000 + t.tv_usec); }
 
 static unsigned char *load_data(FILE *fp, size_t ofst, size_t sz)
 {
@@ -82,18 +75,14 @@ static unsigned char *load_data(FILE *fp, size_t ofst, size_t sz)
 
 static unsigned char *load_model(const char *filename, int *model_size)
 {
-    /* 
-    加载rknn模型
-    filename : rknn模型文件路径
-    model_size : 模型的大小
-    */
+
     FILE *fp;
     unsigned char *data;
 
     fp = fopen(filename, "rb");
     if (NULL == fp)
     {
-        printf("Open rknn model file %s failed.\n", filename);
+        printf("Open file %s failed.\n", filename);
         return NULL;
     }
 
@@ -113,10 +102,7 @@ int detection_process(const char *model_name, int thread_id, int cpuid)
     /*
 	model_path : rknn模型位置
 	thread_id : 进程号
-    cpuid : 使用的cpu
 	*/
-
-    /********************绑定cpu*********************/
 	cpu_set_t mask;
 	CPU_ZERO(&mask);
 	CPU_SET(cpuid, &mask); // 绑定cpu
@@ -126,18 +112,8 @@ int detection_process(const char *model_name, int thread_id, int cpuid)
 	
 	cout << "NPU进程" << thread_id << "使用 CPU " << cpuid << endl;
 
-    /********************rknn init*********************/
-    string ret_name = "rknn_init" // 表示rknn的步骤名称
-    rknn_context ctx; // 创建rknn_context对象
-    int model_data_size = 0; // 模型的大小
-    unsigned char *model_data = load_model(model_name, &model_data_size); // 加载RKNN模型
-    /* 初始化参数flag
-    RKNN_FLAG_COLLECT_PERF_MASK：用于运行时查询网络各层时间。
-    RKNN_FLAG_MEM_ALLOC_OUTSIDE：用于表示模型输入、输出、权重、中间 tensor 内存全部由用户分配。
-    */
-    int ret = rknn_init(&ctx, model_data, model_data_size, RKNN_FLAG_COLLECT_PERF_MASK, NULL); // 初始化RKNN
-    check_ret(ret, "rknn_init")
     int status = 0;
+    rknn_context ctx;
     size_t actual_size = 0;
     int img_width = 0;
     int img_height = 0;
@@ -145,6 +121,7 @@ int detection_process(const char *model_name, int thread_id, int cpuid)
     const float nms_threshold = NMS_THRESH;
     const float box_conf_threshold = BOX_THRESH;
     struct timeval start_time, stop_time;
+    int ret;
 
     // init rga context
     rga_buffer_t src;
@@ -157,6 +134,10 @@ int detection_process(const char *model_name, int thread_id, int cpuid)
     memset(&dst, 0, sizeof(dst));
 
     // rknn设置
+    int model_data_size = 0;
+    unsigned char *model_data = load_model(model_name, &model_data_size);
+    //ret = rknn_init(&ctx, model_data, model_data_size, 0, NULL);
+    ret = rknn_init(&ctx, model_data, model_data_size, RKNN_FLAG_COLLECT_PERF_MASK, NULL);
 
     if (ret < 0)
     {
