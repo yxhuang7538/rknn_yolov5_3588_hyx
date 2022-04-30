@@ -26,7 +26,7 @@
 
 #include "global.h"
 
-static void videoRead(const char *video_path, int cpuid)
+void videoRead(const char *video_path, int cpuid)
 {
 	/*
 	video_path : 视频路径
@@ -67,7 +67,7 @@ static void videoRead(const char *video_path, int cpuid)
 	}
 	
 	// npu_process全部完成
-	
+	//cv::Mat img1 = cv::imread("infrared_640.jpg", 1);
 	while(1)
 	{
 		usleep(10);
@@ -92,7 +92,7 @@ static void videoRead(const char *video_path, int cpuid)
 	cout << "读取视频结束！" << endl;
 }
 
-static void videoWrite(int cpuid)
+void videoWrite(int cpuid)
 {
 	/*
 	cpuid : 结果视频生成使用的cpu号
@@ -112,16 +112,15 @@ static void videoWrite(int cpuid)
 	{
 		if (Video_width != 0)
 		{
-			vid_writer  = cv::VideoWriter(SAVE_PATH, cv::VideoWriter::fourcc('M','P','E','G'), Fps, Size(Video_width, Video_height));
+			vid_writer  = cv::VideoWriter(SAVE_PATH, cv::VideoWriter::fourcc('M','P','E','G'), Fps, cv::Size(Video_width, Video_height));
 			break;
 		}
 	}
-	
 	while(1)
 	{
-		usleep(10);
+		usleep(100);
 		cv::Mat img;
-		'''
+		/*
 		// 如果输出队列存在元素，就一直写入视频
 		if (queueOutput.size() > 0) {
 			mtxQueueOutput.lock();
@@ -130,16 +129,16 @@ static void videoWrite(int cpuid)
 			mtxQueueOutput.unlock();
 			vid_writer.write(img); // Save-video
 		}
-		'''
-		if (queueShow.size > 0)
+		*/
+		if (queueShow.size() > 0)
 		{
 			// 目前用来做检测
 			mtxQueueShow.lock();
-			cv::Mat img = queueShow.top();
-			imshow("RK3588", img);
-			vid_writer.write(img); // Save-video
+			cv::Mat img = queueShow.front();
+			//imshow("RK3588", img);
 			queueShow.pop();
 			mtxQueueShow.unlock();
+			vid_writer.write(img); // Save-video
 
 		}
 		else if(!bWriting)

@@ -5,8 +5,8 @@
 #include <sys/time.h>
 #include <vector>
 #include <set>
-#include "postprocess.h"
 #include <stdint.h>
+#include "global.h"
 
 static char *labels[OBJ_CLASS_NUM];
 const int anchor0[6] = {10, 13, 16, 30, 33, 23};
@@ -188,7 +188,7 @@ static float deqnt_affine_to_f32(int8_t qnt, int32_t zp, float scale)
     return ((float)qnt - (float)zp) * scale;
 }
 
-static int process(int8_t *input, int *anchor, int grid_h, int grid_w, int height, int width, int stride,
+int process(int8_t *input, int *anchor, int grid_h, int grid_w, int height, int width, int stride,
                    std::vector<float> &boxes, std::vector<float> &objProbs, std::vector<int> &classId,
                    float threshold, int32_t zp, float scale)
 {
@@ -244,7 +244,7 @@ static int process(int8_t *input, int *anchor, int grid_h, int grid_w, int heigh
     return validCount;
 }
 
-static int post_process(int8_t *input0, int8_t *input1, int8_t *input2, int model_in_h, int model_in_w,
+int post_process(int8_t *input0, int8_t *input1, int8_t *input2, int model_in_h, int model_in_w,
                  float conf_threshold, float nms_threshold, float scale_w, float scale_h,
                  std::vector<int32_t> &qnt_zps, std::vector<float> &qnt_scales,
                  detect_result_group_t *group)

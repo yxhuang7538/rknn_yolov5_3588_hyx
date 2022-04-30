@@ -97,7 +97,7 @@ static unsigned char *load_model(const char *filename, int *model_size)
     return data;
 }
 
-static int detection_process(const char *model_name int thread_id)
+int detection_process(const char *model_name, int thread_id, int cpuid)
 {
     /*
 	model_path : rknn模型位置
@@ -105,12 +105,12 @@ static int detection_process(const char *model_name int thread_id)
 	*/
 	cpu_set_t mask;
 	CPU_ZERO(&mask);
-	CPU_SET(thread_id, &mask); // 绑定cpu
+	CPU_SET(cpuid, &mask); // 绑定cpu
 	
 	if (pthread_setaffinity_np(pthread_self(), sizeof(mask), &mask) < 0)
 		cerr << "set thread affinity failed" << endl; // 绑定失败
 	
-	cout << "NPU进程" << thread_id << "使用 CPU " << thread_id << endl;
+	cout << "NPU进程" << thread_id << "使用 CPU " << cpuid << endl;
 
     int status = 0;
     rknn_context ctx;
@@ -136,7 +136,8 @@ static int detection_process(const char *model_name int thread_id)
     // rknn设置
     int model_data_size = 0;
     unsigned char *model_data = load_model(model_name, &model_data_size);
-    ret = rknn_init(&ctx, model_data, model_data_size, 0, NULL);
+    //ret = rknn_init(&ctx, model_data, model_data_size, 0, NULL);
+    ret = rknn_init(&ctx, model_data, model_data_size, RKNN_FLAG_COLLECT_PERF_MASK, NULL);
 
     if (ret < 0)
     {
@@ -230,10 +231,12 @@ static int detection_process(const char *model_name int thread_id)
         out_scales.push_back(output_attrs[i].scale);
         out_zps.push_back(output_attrs[i].zp);
     }
+    multi_npu_process_initialized[thread_id] = 1;
+    printf("%d\n", multi_npu_process_initialized[thread_id]);
     while (1)
     {
         // 加载图片
-        pair<int, Mat> pairIndexImage;
+        pair<int, cv::Mat> pairIndexImage;
         mtxQueueInput.lock();
         // 若输入队列为空则不进入NPU_process
 		if (queueInput.empty())
@@ -262,7 +265,7 @@ static int detection_process(const char *model_name int thread_id)
         cv::cvtColor(pairIndexImage.second, img, cv::COLOR_BGR2RGB); // 色彩空间转换
         img_width = img.cols; // 输入图片的宽和高
         img_height = img.rows;
-        cv::Mat resize_img(cv::Size(width, height), CV_8UC3, resize_buf);
+ 
         // resize
         src = wrapbuffer_virtualaddr((void *)img.data, img_width, img_height, RK_FORMAT_RGB_888);
         dst = wrapbuffer_virtualaddr((void *)resize_buf, width, height, RK_FORMAT_RGB_888);
@@ -273,8 +276,9 @@ static int detection_process(const char *model_name int thread_id)
                 return -1;
             }
         IM_STATUS STATUS = imresize(src, dst);
+        cv::Mat resize_img(cv::Size(width, height), CV_8UC3, resize_buf);
         //cv::imwrite("resize_input.jpg", resize_img);
-        inputs[0].buf = resize_buf;
+        inputs[0].buf = img.data;
         rknn_inputs_set(ctx, io_num.n_input, inputs);
 
         gettimeofday(&start_time, NULL);
@@ -285,9 +289,14 @@ static int detection_process(const char *model_name int thread_id)
            (__get_us(stop_time) - __get_us(start_time)) / 1000);
 
         ret = rknn_outputs_get(ctx, io_num.n_output, outputs, NULL);
-
+	rknn_perf_detail perf_detail;
+    	ret = rknn_query(ctx, RKNN_QUERY_PERF_DETAIL, &perf_detail, sizeof(perf_detail));
+    	//printf("%s\n",perf_detail.perf_data);
         // 后处理(已加入nms)
         // TODO
+        float scale_w = (float)width / img_width;
+        float scale_h = (float)height / img_height;
+        detect_result_group_t detect_result_group;
         post_process((int8_t *)outputs[0].buf, (int8_t *)outputs[1].buf, (int8_t *)outputs[2].buf, height, width,
                  box_conf_threshold, nms_threshold, scale_w, scale_h, out_zps, out_scales, &detect_result_group);
 
@@ -311,8 +320,8 @@ static int detection_process(const char *model_name int thread_id)
 
         printf("[%4d/%4d] : worked/total\n", pairIndexImage.first, Frame_cnt);
         printf("Idx:%d 图在线程%d中处理结束\n", pairIndexImage.first, thread_id);
-
-        rknn_outputs_release(ctx, 3, outputs);
+	cv::imwrite("out/out.jpg", pairIndexImage.second);
+        //rknn_outputs_release(ctx, 3, outputs);
         // 将检测结果加入show序列
         while(idxDectImage != pairIndexImage.first)
 		{
@@ -322,6 +331,25 @@ static int detection_process(const char *model_name int thread_id)
 		idxDectImage++;
         queueShow.push(pairIndexImage.second);
 		mtxQueueShow.unlock();
+		if (idxShowImage == Frame_cnt || cv::waitKey(1) == 27) {
+			//cv::destroyAllWindows();
+			bReading = false;
+			bWriting = false;
+			break;
+		}
 
     }
+    // release
+    ret = rknn_destroy(ctx);
+
+    if (model_data)
+    {
+        free(model_data);
+    }
+
+    if (resize_buf)
+    {
+        free(resize_buf);
+    }
+    return 0;
 }

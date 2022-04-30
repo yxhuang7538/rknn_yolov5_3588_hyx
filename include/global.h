@@ -28,12 +28,10 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/videoio.hpp"
 #include "opencv2/video.hpp"
-#include "KalmanTracker.h"
-#include "Hungarian.h"
 
 #define OBJ_NAME_MAX_SIZE 16
 #define OBJ_NUMB_MAX_SIZE 64
-#define OBJ_CLASS_NUM     80
+#define OBJ_CLASS_NUM     2
 #define NMS_THRESH        0.6
 #define BOX_THRESH        0.5
 #define PROP_BOX_SIZE     (5+OBJ_CLASS_NUM)
@@ -41,30 +39,29 @@
 #define SAVE_PATH "output.avi"
 
 using namespace std;
+extern mutex mtxQueueInput; // 输入队列mutex
+extern mutex mtxQueueOutput; // 输出队列mutex
+extern mutex mtxQueueShow; // 展示队列mutex
+extern queue<pair<int, cv::Mat>> queueInput; // 输入队列 <id, 图片>
+extern queue<cv::Mat> queueOutput; // 输出队列 <图片>
+extern queue<cv::Mat> queueShow;
+extern int Frame_cnt; // 帧的计数
+extern int Fps; // 帧率
+extern int Video_width; // 视频的输入宽度
+extern int Video_height; // 视频的输入高度
 
-static int Frame_cnt = 0; // 帧的计数
-static int Fps = 0; // 帧率
-static int Video_width = 0; // 视频的输入宽度
-static int Video_height = 0; // 视频的输入高度
+extern int multi_npu_process_initialized[5]; // npu初始化完成标志，1为完成，0为未完成
 
-static int multi_npu_process_initialized[5] = {0, 0, 0, 0, 0}; // npu初始化完成标志，1为完成，0为未完成
+extern int idxInputImage; // 输入视频的帧的id
+extern int idxDectImage; // 要检测的下一帧id
+extern int idxShowImage; // 要显示的下一帧的id
+extern bool bReading;   // flag of input
+extern bool bWriting;	// flag of output
+extern double Time_video;  // 整个视频(包括画图)所花的时间
+extern double Time_track;  // 整个视频追踪所花的时间
 
-mutex mtxQueueInput; // 输入队列mutex
-mutex mtxQueueOutput; // 输出队列mutex
-mutex mtxQueueShow; // 展示队列mutex
-queue<pair<int, cv::Mat>> queueInput; // 输入队列 <id, 图片>
-queue<cv::Mat> queueOutput; // 输出队列 <图片>
-
-static int idxInputImage = 0; // 输入视频的帧的id
-static int idxDectImage = 0; // 要检测的下一帧id
-static int idxShowImage = 0; // 要显示的下一帧的id
-static bool bReading = true;   // flag of input
-static bool bWriting = true;	// flag of output
-static double Time_video = 0;  // 整个视频(包括画图)所花的时间
-static double Time_track = 0;  // 整个视频追踪所花的时间
-
-vector<float> out_scales; // 存储scales 和 zp
-vector<int32_t> out_zps;
+extern vector<float> out_scales; // 存储scales 和 zp
+extern vector<int32_t> out_zps;
 
 typedef struct _BOX_RECT
 {
@@ -88,14 +85,15 @@ typedef struct _detect_result_group_t
     detect_result_t results[OBJ_NUMB_MAX_SIZE];
 } detect_result_group_t;
 
-static int detection_process(const char *model_name int thread_id);
+int detection_process(const char *model_name, int thread_id, int cpuid);
 
-static int post_process(int8_t *input0, int8_t *input1, int8_t *input2, int model_in_h, int model_in_w,
+int post_process(int8_t *input0, int8_t *input1, int8_t *input2, int model_in_h, int model_in_w,
                  float conf_threshold, float nms_threshold, float scale_w, float scale_h,
                  std::vector<int32_t> &qnt_zps, std::vector<float> &qnt_scales,
                  detect_result_group_t *group);
                  
-static void videoRead(const char *video_path, int cpuid);
+void videoRead(const char *video_path, int cpuid);
 
-static void videoWrite(int cpuid);
-static void track_process(int cpuid);
+void videoWrite(int cpuid);
+void track_process(int cpuid);
+double __get_us(struct timeval t);
