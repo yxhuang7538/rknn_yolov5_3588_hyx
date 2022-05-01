@@ -19,15 +19,9 @@
 #include <unistd.h>
 #include <dlfcn.h>
 #include "rknn_api.h"
-// #include "rknn_api_1808.h"
+
 #include "im2d.h"
-#include "RgaUtils.h"
-#include "rga.h"
 #include "opencv2/core/core.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
-#include "opencv2/highgui/highgui.hpp"
-#include "opencv2/videoio.hpp"
-#include "opencv2/video.hpp"
 #include "global.h"
 
 mutex mtxQueueInput; // 输入队列mutex
@@ -51,5 +45,6 @@ bool bWriting = true;	// flag of output
 double Time_video = 0;  // 整个视频(包括画图)所花的时间
 double Time_track = 0;  // 整个视频追踪所花的时间
 
-vector<float> out_scales; // 存储scales 和 zp
-vector<int32_t> out_zps;
+Scalar_<int> randColor[COLORS_NUMBER]; // 随机颜色
+RNG rng(0xFFFFFFFF); //RNG类是opencv里C++的随机数产生器
+for (int i = 0; i < COLORS_NUMBER; i++) rng.fill(randColor[i], RNG::UNIFORM, 0, 256);

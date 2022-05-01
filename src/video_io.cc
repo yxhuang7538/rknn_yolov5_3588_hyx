@@ -77,7 +77,7 @@ void videoRead(const char *video_path, int cpuid)
 			// 如果读不到图片，或者bReading不在读取状态，或者读取图像的id大于总帧数则退出读视频
 			if (!bReading || !video.read(img) || idxInputImage >= Frame_cnt)
 			{
-				cout << "读取视频出错！" << endl;
+				cout << "读取视频结束！" << endl;
 				video.release();
 				break;
 			}

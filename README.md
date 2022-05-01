@@ -44,6 +44,7 @@ git clone https://github.com/yxhuang7538/rknn_yolov5_3588_hyx.git
     - [ ] 使用蒸馏模型
     - [ ] 去掉Focus层
     - [x] int8量化
+    - [ ] 多线程权重复用
 
 ## 4、参考
 1. https://github.com/rockchip-linux/rknpu2

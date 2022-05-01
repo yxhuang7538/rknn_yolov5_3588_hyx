@@ -37,6 +37,7 @@
 #define PROP_BOX_SIZE     (5+OBJ_CLASS_NUM)
 #define LABEL_NALE_TXT_PATH "./model/labels.txt"
 #define SAVE_PATH "output.avi"
+#define COLORS_NUMBER     20 // 20个随机颜色
 
 using namespace std;
 extern mutex mtxQueueInput; // 输入队列mutex
@@ -60,8 +61,7 @@ extern bool bWriting;	// flag of output
 extern double Time_video;  // 整个视频(包括画图)所花的时间
 extern double Time_track;  // 整个视频追踪所花的时间
 
-extern vector<float> out_scales; // 存储scales 和 zp
-extern vector<int32_t> out_zps;
+extern Scalar_<int> randColor[COLORS_NUMBER]; //随机颜色
 
 typedef struct _BOX_RECT
 {
@@ -69,19 +69,20 @@ typedef struct _BOX_RECT
     int right;
     int top;
     int bottom;
-} BOX_RECT; // 画图用的box
+} BOX_RECT; // box格式 左上 右下 点坐标
 
 typedef struct __detect_result_t
 {
-    char name[OBJ_NAME_MAX_SIZE];
-    BOX_RECT box;
-    float prop;
+    char name[OBJ_NAME_MAX_SIZE]; // 物体类别名字
+    BOX_RECT box; // 目标box
+    float prop; // 类别概率
+    int color; // 目标对应类别的颜色
 } detect_result_t;
 
-typedef struct _detect_result_group_t
+typedef struct _detect_result_group_t // 多个检测结果组
 {
     int id;
-    int count;
+    int count; // 一张图框的总数
     detect_result_t results[OBJ_NUMB_MAX_SIZE];
 } detect_result_group_t;
 

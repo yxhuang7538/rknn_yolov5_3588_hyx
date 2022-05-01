@@ -48,8 +48,8 @@ int main(const int argc, const char **argv)
         // 结果显示
         gettimeofday(&stop_time, NULL);
         Time_video = (__get_us(stop_time) - __get_us(start_time)) / 1000;
-	cout << "总耗时:" << Time_video << " 总帧数:" << Frame_cnt  <<endl;
-	cout << "平均帧率:" << Frame_cnt / Time_video << endl;
+	    cout << "总耗时:" << Time_video << " 总帧数:" << Frame_cnt  <<endl;
+	    cout << "平均帧率:" << Frame_cnt / Time_video << endl;
     }
 
     else
