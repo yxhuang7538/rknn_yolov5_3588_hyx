@@ -61,7 +61,7 @@ extern bool bWriting;	// flag of output
 extern double Time_video;  // 整个视频(包括画图)所花的时间
 extern double Time_track;  // 整个视频追踪所花的时间
 
-extern Scalar_<int> randColor[COLORS_NUMBER]; //随机颜色
+extern cv::Scalar_<int> randColor[COLORS_NUMBER]; //随机颜色
 
 typedef struct _BOX_RECT
 {
