@@ -15,5 +15,6 @@
         "atomic": "cpp",
         "thread": "cpp",
         "xstring": "cpp"
-    }
+    },
+    "cmake.configureOnOpen": false
 }
