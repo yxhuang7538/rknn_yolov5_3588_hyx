@@ -28,7 +28,7 @@
 
 using namespace std;
 
-static void check_ret(int ret, char char* ret_name):
+static void check_ret(int ret, string ret_name)
 {
     // 检查ret是否正确并输出，ret_name表示哪一步
     if (ret < 0)
@@ -135,7 +135,8 @@ int detection_process(const char *model_name, int thread_id, int cpuid)
 	cout << "NPU进程" << thread_id << "使用 CPU " << cpuid << endl;
 
     /********************rknn init*********************/
-    char *ret_name = "rknn_init" // 表示rknn的步骤名称
+    string ret_name;
+    ret_name = "rknn_init"; // 表示rknn的步骤名称
     rknn_context ctx; // 创建rknn_context对象
     int model_data_size = 0; // 模型的大小
     unsigned char *model_data = load_model(model_name, &model_data_size); // 加载RKNN模型
@@ -153,7 +154,7 @@ int detection_process(const char *model_name, int thread_id, int cpuid)
     // rknn_query 函数能够查询获取到模型输入输出信息、逐层运行时间、模型推理的总时间、
     // SDK 版本、内存占用信息、用户自定义字符串等信息。
     // 版本信息
-    char *ret_name = "rknn_query";
+    ret_name = "rknn_query";
     rknn_sdk_version version; // SDK版本信息结构体
     ret = rknn_query(ctx, RKNN_QUERY_SDK_VERSION, &version, sizeof(rknn_sdk_version));
     check_ret(ret, ret_name);
@@ -222,7 +223,7 @@ int detection_process(const char *model_name, int thread_id, int cpuid)
 			else 
 			{   
                 // 释放内存rknn_context
-                char *ret_name = "rknn_destroy";
+                ret_name = "rknn_destroy";
 				int ret = rknn_destroy(ctx);
 				check_ret(ret, ret_name);
                 break;
@@ -243,11 +244,11 @@ int detection_process(const char *model_name, int thread_id, int cpuid)
             cv::cvtColor(frame.second, img, cv::COLOR_BGR2RGB); // 色彩空间转换
             img_width = img.cols; // 输入图片的宽、高和通道数
             img_height = img.rows;
-            img_channel = img.channel;
+            img_channel = 3;
             // Resize (TODO)
 
             /********************rknn inputs set*********************/
-            char *ret_name = "rknn_inputs_set";
+            ret_name = "rknn_inputs_set";
             rknn_input inputs[1];
             memset(inputs, 0, sizeof(inputs));
     
@@ -262,7 +263,7 @@ int detection_process(const char *model_name, int thread_id, int cpuid)
             check_ret(ret, ret_name);
 
             /********************rknn run****************************/
-            char *ret_name = "rknn_run";
+            ret_name = "rknn_run";
             gettimeofday(&start_time, NULL);
             ret = rknn_run(ctx, NULL); // 推理
             gettimeofday(&stop_time, NULL);
@@ -270,9 +271,9 @@ int detection_process(const char *model_name, int thread_id, int cpuid)
             printf("once run use %f ms\n", (__get_us(stop_time) - __get_us(start_time)) / 1000);
 
             /********************rknn outputs get****************************/
-            char *ret_name = "rknn_outputs_get";
-            float out_scales = {0, 0, 0}; // 存储scales 和 zp
-            int32_t out_zps = {0, 0, 0};
+            ret_name = "rknn_outputs_get";
+            float out_scales[3] = {0, 0, 0}; // 存储scales 和 zp
+            int32_t out_zps[3] = {0, 0, 0};
             // 创建rknn_output对象
             rknn_output outputs[io_num.n_output];
             memset(outputs, 0, sizeof(outputs));
@@ -287,7 +288,7 @@ int detection_process(const char *model_name, int thread_id, int cpuid)
             ret = rknn_outputs_get(ctx, io_num.n_output, outputs, NULL);
 
             /********************是否打印推理时间细节****************************/
-            char *ret_name = "rknn_perf_detail_display";
+            ret_name = "rknn_perf_detail_display";
             rknn_perf_detail perf_detail;
             ret = rknn_query(ctx, RKNN_QUERY_PERF_DETAIL, &perf_detail, sizeof(perf_detail));
             check_ret(ret, ret_name);
@@ -296,6 +297,7 @@ int detection_process(const char *model_name, int thread_id, int cpuid)
             /********************postprocess_cpu****************************/
             float scale_w = (float)width / img_width; // 图片缩放尺度 resize需要
             float scale_h = (float)height / img_height;
+            detect_result_group_t detect_result_group;
             post_process((int8_t *)outputs[0].buf, (int8_t *)outputs[1].buf, (int8_t *)outputs[2].buf, height, width,
                  box_conf_threshold, nms_threshold, scale_w, scale_h, out_zps, out_scales, &detect_result_group);
 
@@ -338,8 +340,8 @@ int detection_process(const char *model_name, int thread_id, int cpuid)
     }
 
     /********************rknn_destroy****************************/
-    char *ret_name = "rknn_destroy";
-    int ret = rknn_destroy(ctx);
+    ret_name = "rknn_destroy";
+    ret = rknn_destroy(ctx);
     check_ret(ret, ret_name);
 
     if (model_data) free(model_data);

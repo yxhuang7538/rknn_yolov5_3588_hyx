@@ -27,7 +27,10 @@ int main(const int argc, const char **argv)
     int cpus = sysconf(_SC_NPROCESSORS_CONF); // 获取cpu核的数量
     array<thread, 8> threads;
     struct timeval start_time, stop_time;
-
+    
+    // colors
+    for (int i = 0; i < COLORS_NUMBER; i++) 
+    rng.fill(randColor[i], cv::RNG::UNIFORM, 0, 256);
     // 分配进程
     gettimeofday(&start_time, NULL);
     if (argv[1][0] == 'v')

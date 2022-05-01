@@ -47,4 +47,4 @@ double Time_track = 0;  // 整个视频追踪所花的时间
 
 cv::Scalar_<int> randColor[COLORS_NUMBER]; // 随机颜色
 cv::RNG rng(0xFFFFFFFF); //RNG类是opencv里C++的随机数产生器
-for (int i = 0; i < COLORS_NUMBER; i++) rng.fill(randColor[i], cv::RNG::UNIFORM, 0, 256);
+

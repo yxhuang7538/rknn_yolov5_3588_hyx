@@ -62,6 +62,7 @@ extern double Time_video;  // 整个视频(包括画图)所花的时间
 extern double Time_track;  // 整个视频追踪所花的时间
 
 extern cv::Scalar_<int> randColor[COLORS_NUMBER]; //随机颜色
+extern cv::RNG rng;
 
 typedef struct _BOX_RECT
 {
@@ -90,7 +91,7 @@ int detection_process(const char *model_name, int thread_id, int cpuid);
 
 int post_process(int8_t *input0, int8_t *input1, int8_t *input2, int model_in_h, int model_in_w,
                  float conf_threshold, float nms_threshold, float scale_w, float scale_h,
-                 std::vector<int32_t> &qnt_zps, std::vector<float> &qnt_scales,
+                 int32_t *qnt_zps, float *qnt_scales,
                  detect_result_group_t *group);
                  
 void videoRead(const char *video_path, int cpuid);
