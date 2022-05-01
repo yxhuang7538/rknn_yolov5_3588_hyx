@@ -306,7 +306,7 @@ int detection_process(const char *model_name, int thread_id, int cpuid)
             for (int i = 0; i < detect_result_group.count; i++)
             {
                 detect_result_t *det_result = &(detect_result_group.results[i]);
-                //sprintf(text, "%s %.1f%%", det_result->name, det_result->prop * 100);
+                sprintf(text, "%s %.1f%%", det_result->name, det_result->prop * 100);
                 //printf("%s @ (%d %d %d %d) %f\n",
                 //    det_result->name,
                 //    det_result->box.left, det_result->box.top, det_result->box.right, det_result->box.bottom,
@@ -329,7 +329,7 @@ int detection_process(const char *model_name, int thread_id, int cpuid)
             idxDectImage++;
             queueShow.push(frame.second);
             mtxQueueShow.unlock();
-            if (idxShowImage == Frame_cnt || cv::waitKey(1) == 27)
+            if (idxDectImage == Frame_cnt || cv::waitKey(1) == 27)
             {
                 cv::destroyAllWindows();
                 bReading = false;

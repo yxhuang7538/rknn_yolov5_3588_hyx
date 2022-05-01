@@ -28,7 +28,7 @@ int main(const int argc, const char **argv)
     array<thread, 8> threads;
     struct timeval start_time, stop_time;
     
-    // colors
+    // 随机初始化一些颜色
     for (int i = 0; i < COLORS_NUMBER; i++) 
     rng.fill(randColor[i], cv::RNG::UNIFORM, 0, 256);
     // 分配进程
