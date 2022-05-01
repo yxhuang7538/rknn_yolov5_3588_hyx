@@ -51,7 +51,7 @@ extern int Fps; // 帧率
 extern int Video_width; // 视频的输入宽度
 extern int Video_height; // 视频的输入高度
 
-extern int multi_npu_process_initialized[5]; // npu初始化完成标志，1为完成，0为未完成
+extern int multi_npu_process_initialized[4]; // npu初始化完成标志，1为完成，0为未完成
 
 extern int idxInputImage; // 输入视频的帧的id
 extern int idxDectImage; // 要检测的下一帧id

@@ -131,19 +131,28 @@ void videoWrite(int cpuid)
 		}
 		*/
 		if (queueShow.size() > 0)
-		{
+		{	
 			// 目前用来做检测
 			mtxQueueShow.lock();
 			cv::Mat img = queueShow.front();
 			//imshow("RK3588", img);
 			queueShow.pop();
 			mtxQueueShow.unlock();
-			vid_writer.write(img); // Save-video
+			//vid_writer.write(img); // Save-video
+			idxShowImage++;
 
 		}
-		else if(!bWriting)
+		if (idxShowImage == Frame_cnt || cv::waitKey(1) == 27)
+  		{
+		    	printf("*******************************************");
+			cv::destroyAllWindows();
+			bReading = false;
+			bWriting = false;
+			break;
+	    	}
+		if(!bWriting)
 		{
-			vid_writer.release();
+			//vid_writer.release();
 			break;
 		}
 	}

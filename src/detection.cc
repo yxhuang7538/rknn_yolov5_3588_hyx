@@ -219,10 +219,11 @@ int detection_process(const char *model_name, int thread_id, int cpuid)
 		{
 			mtxQueueInput.unlock();
 			usleep(1000);
-			if (bReading) continue;
+			if (bReading || bWriting) continue;
 			else 
 			{   
                 // 释放内存rknn_context
+                /********************rknn_destroy****************************/
                 ret_name = "rknn_destroy";
 				int ret = rknn_destroy(ctx);
 				check_ret(ret, ret_name);
@@ -239,7 +240,6 @@ int detection_process(const char *model_name, int thread_id, int cpuid)
 			printf("Idx:%d 图在线程%d中开始处理\n", frame.first, thread_id);
 			queueInput.pop();
 			mtxQueueInput.unlock();
-
             cv::Mat img = frame.second.clone();
             cv::cvtColor(frame.second, img, cv::COLOR_BGR2RGB); // 色彩空间转换
             img_width = img.cols; // 输入图片的宽、高和通道数
@@ -322,29 +322,17 @@ int detection_process(const char *model_name, int thread_id, int cpuid)
 
             printf("[%4d/%4d] : worked/total\n", frame.first, Frame_cnt);
             printf("Idx:%d 图在线程%d中处理结束\n", frame.first, thread_id);
-
             // 将检测结果加入quequeShow队列进行展示或保存为视频
             while(idxDectImage != frame.first) usleep(1000); // 避免多个进程冲突，保证检测顺序正确
             mtxQueueShow.lock();
             idxDectImage++;
             queueShow.push(frame.second);
             mtxQueueShow.unlock();
-            if (idxDectImage == Frame_cnt || cv::waitKey(1) == 27)
-            {
-                cv::destroyAllWindows();
-                bReading = false;
-                bWriting = false;
-                break;
-		    }
         } 
     }
 
-    /********************rknn_destroy****************************/
-    ret_name = "rknn_destroy";
-    ret = rknn_destroy(ctx);
-    check_ret(ret, ret_name);
-
     if (model_data) free(model_data);
     // if (resize_buf) free(resize_buf);
+    printf("over%d\n", thread_id);
     return 0;
 }
