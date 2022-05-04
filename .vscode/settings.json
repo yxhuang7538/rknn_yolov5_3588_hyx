@@ -14,7 +14,8 @@
         "fstream": "cpp",
         "atomic": "cpp",
         "thread": "cpp",
-        "xstring": "cpp"
+        "xstring": "cpp",
+        "xtree": "cpp"
     },
     "cmake.configureOnOpen": false
 }

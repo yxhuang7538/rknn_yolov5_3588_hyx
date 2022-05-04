@@ -34,6 +34,7 @@
 #define OBJ_CLASS_NUM     2
 #define NMS_THRESH        0.6
 #define BOX_THRESH        0.5
+#define IOU_THRESH        0.3 // 跟踪用
 #define PROP_BOX_SIZE     (5+OBJ_CLASS_NUM)
 #define LABEL_NALE_TXT_PATH "./model/labels.txt"
 #define SAVE_PATH "output.avi"
@@ -70,6 +71,7 @@ typedef struct _BOX_RECT
     int right;
     int top;
     int bottom;
+    Rect_<float> bbox;
 } BOX_RECT; // box格式 左上 右下 点坐标
 
 typedef struct __detect_result_t
@@ -78,14 +80,18 @@ typedef struct __detect_result_t
     BOX_RECT box; // 目标box
     float prop; // 类别概率
     int color; // 目标对应类别的颜色
+    int track_id; // 跟踪的时候确定目标实例id
 } detect_result_t;
 
 typedef struct _detect_result_group_t // 多个检测结果组
 {
-    int id;
+    int id; // 类别id
     int count; // 一张图框的总数
+    int frame_id; // 第几帧
+    cv::Mat img; // 原图
     detect_result_t results[OBJ_NUMB_MAX_SIZE];
 } detect_result_group_t;
+
 
 int detection_process(const char *model_name, int thread_id, int cpuid);
 

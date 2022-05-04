@@ -340,6 +340,14 @@ int post_process(int8_t *input0, int8_t *input1, int8_t *input2, int model_in_h,
         group->results[last_count].color = id;
         strncpy(group->results[last_count].name, label, OBJ_NAME_MAX_SIZE);
 
+        // 增加Rect_<float> bbox
+        group->results[last_count].box.bbox = Rect_<float>(
+            group->results[last_count].box.left,
+            group->results[last_count].box.top,
+            group->results[last_count].box.right - group->results[last_count].box.left,
+            group->results[last_count].box.bottom - group->results[last_count].box.top
+        );
+
         // printf("result %2d: (%4d, %4d, %4d, %4d), %s\n", i, group->results[last_count].box.left, group->results[last_count].box.top,
         //        group->results[last_count].box.right, group->results[last_count].box.bottom, label);
         last_count++;

@@ -73,9 +73,10 @@ add_executable(rknn_yolov5_3588_hyx
 	src/main.cc
 	src/global.cc
 	src/postprocess.cc
-        src/video_io.cc
-        src/detection.cc
-        src/trackprocess.cc
+  src/video_io.cc
+  src/detection.cc
+  src/KalmanTracker.cc
+  src/trackprocess.cc
 )
 set(link_libs pthread)
 
