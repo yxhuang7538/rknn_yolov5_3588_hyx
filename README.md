@@ -28,15 +28,22 @@
 - RKNN API : rknpu2/runtime/librknnrt.so
 
 ```
+git clone https://github.com/rockchip-linux/rknpu2.git
+cd rknpu2/examples
 git clone https://github.com/yxhuang7538/rknn_yolov5_3588_hyx.git
-
+cd rknn_yolov5_3588_hyx
+# 修改CMakeLists.txt中你的opencv的路径
+# 修改build-linux_RK3588.sh中编译器路径
+./build-linux_RK3588.sh
+cd install/rknn_yolov5_3588_hyx_linux
+./rknn_yolov5_3588_hyx v ./model/xxx.rknn ./model/xxx.mp4
 ```
 
 ## 3、进度
 - [ ] 采用零拷贝API接口框架
 - [ ] 采用通用API接口框架
 - [x] 实现目标检测
-- [ ] 实现目标跟踪
+- [x] 实现目标跟踪
 - [ ] 优化目标检测
 - [ ] 优化目标跟踪
 - [ ] 修复Resize问题
