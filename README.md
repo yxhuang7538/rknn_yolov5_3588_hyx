@@ -49,7 +49,7 @@ cd install/rknn_yolov5_3588_hyx_linux
 - [ ] 修复Resize问题
 - [ ] 提高帧率
     - [ ] 使用蒸馏模型
-    - [ ] 去掉Focus层
+    - [x] 去掉Focus层
     - [x] int8量化
     - [ ] 多线程权重复用
 
