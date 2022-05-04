@@ -41,29 +41,6 @@
 #define COLORS_NUMBER     20 // 20个随机颜色
 
 using namespace std;
-extern mutex mtxQueueInput; // 输入队列mutex
-extern mutex mtxQueueOutput; // 输出队列mutex
-extern mutex mtxQueueShow; // 展示队列mutex
-extern queue<pair<int, cv::Mat>> queueInput; // 输入队列 <id, 图片>
-extern queue<cv::Mat> queueOutput; // 输出队列 <图片>
-extern queue<cv::Mat> queueShow;
-extern int Frame_cnt; // 帧的计数
-extern int Fps; // 帧率
-extern int Video_width; // 视频的输入宽度
-extern int Video_height; // 视频的输入高度
-
-extern int multi_npu_process_initialized[4]; // npu初始化完成标志，1为完成，0为未完成
-
-extern int idxInputImage; // 输入视频的帧的id
-extern int idxDectImage; // 要检测的下一帧id
-extern int idxShowImage; // 要显示的下一帧的id
-extern bool bReading;   // flag of input
-extern bool bWriting;	// flag of output
-extern double Time_video;  // 整个视频(包括画图)所花的时间
-extern double Time_track;  // 整个视频追踪所花的时间
-
-extern cv::Scalar_<int> randColor[COLORS_NUMBER]; //随机颜色
-extern cv::RNG rng;
 
 typedef struct _BOX_RECT
 {
@@ -71,7 +48,7 @@ typedef struct _BOX_RECT
     int right;
     int top;
     int bottom;
-    Rect_<float> bbox;
+    cv::Rect_<float> bbox;
 } BOX_RECT; // box格式 左上 右下 点坐标
 
 typedef struct __detect_result_t
@@ -91,6 +68,37 @@ typedef struct _detect_result_group_t // 多个检测结果组
     cv::Mat img; // 原图
     detect_result_t results[OBJ_NUMB_MAX_SIZE];
 } detect_result_group_t;
+
+class paircomp {
+public:
+    bool operator()(const detect_result_group_t &n1, const detect_result_group_t &n2) const {
+        return n1.frame_id > n2.frame_id;
+    }
+};
+
+extern mutex mtxQueueInput; // 输入队列mutex
+extern mutex mtxQueueOutput; // 输出队列mutex
+extern mutex mtxQueueShow; // 展示队列mutex
+extern queue<pair<int, cv::Mat>> queueInput; // 输入队列 <id, 图片>
+extern queue<cv::Mat> queueOutput; // 输出队列 <图片>
+extern priority_queue<detect_result_group_t, vector<detect_result_group_t>, paircomp> queueShow;
+extern int Frame_cnt; // 帧的计数
+extern int Fps; // 帧率
+extern int Video_width; // 视频的输入宽度
+extern int Video_height; // 视频的输入高度
+
+extern int multi_npu_process_initialized[4]; // npu初始化完成标志，1为完成，0为未完成
+
+extern int idxInputImage; // 输入视频的帧的id
+extern int idxDectImage; // 要检测的下一帧id
+extern int idxShowImage; // 要显示的下一帧的id
+extern bool bReading;   // flag of input
+extern bool bWriting;	// flag of output
+extern double Time_video;  // 整个视频(包括画图)所花的时间
+extern double Time_track;  // 整个视频追踪所花的时间
+
+extern cv::Scalar_<int> randColor[COLORS_NUMBER]; //随机颜色
+extern cv::RNG rng;
 
 
 int detection_process(const char *model_name, int thread_id, int cpuid);

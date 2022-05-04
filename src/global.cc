@@ -29,7 +29,7 @@ mutex mtxQueueOutput; // 输出队列mutex
 mutex mtxQueueShow; // 展示队列mutex
 queue<pair<int, cv::Mat>> queueInput; // 输入队列 <id, 图片>
 queue<cv::Mat> queueOutput; // 输出队列 <图片>
-queue<cv::Mat> queueShow;
+priority_queue<detect_result_group_t, vector<detect_result_group_t>, paircomp> queueShow;
 int Frame_cnt = 0; // 帧的计数
 int Fps = 0; // 帧率
 int Video_width = 0; // 视频的输入宽度

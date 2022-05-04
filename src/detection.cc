@@ -301,7 +301,7 @@ int detection_process(const char *model_name, int thread_id, int cpuid)
             post_process((int8_t *)outputs[0].buf, (int8_t *)outputs[1].buf, (int8_t *)outputs[2].buf, height, width,
                  box_conf_threshold, nms_threshold, scale_w, scale_h, out_zps, out_scales, &detect_result_group);
 
-            '''# 测试检测结果
+            /*# 测试检测结果
             // 绘制目标检测结果到原frame
             char text[256];
             for (int i = 0; i < detect_result_group.count; i++)
@@ -320,7 +320,7 @@ int detection_process(const char *model_name, int thread_id, int cpuid)
                 rectangle(frame.second, cv::Point(x1, y1), cv::Point(x2, y2), randColor[color], 3);
                 putText(frame.second, text, cv::Point(x1, y1 + 12), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 0));
             }
-            '''
+            */
             detect_result_group.img = frame.second.clone(); // 保存原图
             detect_result_group.frame_id = frame.first; // 第几帧
             printf("[%4d/%4d] : worked/total\n", frame.first, Frame_cnt);

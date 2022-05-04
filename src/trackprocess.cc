@@ -26,13 +26,24 @@
 
 #include "global.h"
 #include "KalmanTracker.h"
+#include "Hungarian.h"
 
 using namespace std;
+
+double box_iou(cv::Rect_<float> bb_test, cv::Rect_<float> bb_gt)
+{
+	float in = (bb_test & bb_gt).area();
+	float un = bb_test.area() + bb_gt.area() - in;
+
+	if (un < DBL_EPSILON)
+		return 0;
+
+	return (double)(in / un);
+}
 
 void track_process(int cpuid)
 {
     cpu_set_t mask;
-	int cpuid = id;
 	CPU_ZERO(&mask);
 	CPU_SET(cpuid, &mask);
 
@@ -56,10 +67,10 @@ void track_process(int cpuid)
 		}
 
 		// 如果下一个要显示的图片已经被处理好了 则进行追踪任务
-		else if (idxShowImage == queueShow.front().frame_id)
+		else if (idxShowImage == queueShow.top().frame_id)
 		{
 			cout << "待追踪的图片数： " << queueShow.size() << endl;
-			detect_result_group_t group = queueShow.front() // 取出图片检测结果group
+			detect_result_group_t group = queueShow.top(); // 取出图片检测结果group
 			cv::Mat img = group.img.clone();
 			queueShow.pop();
 			mtxQueueShow.unlock();
@@ -68,7 +79,7 @@ void track_process(int cpuid)
 				//用第一帧的检测结果初始化跟踪器
 				for (int i = 0; i < group.count; i++)
 				{	
-					detect_result_t *det_result = &(group.results[i])
+					detect_result_t *det_result = &(group.results[i]);
 					KalmanTracker trk = KalmanTracker(det_result->box.bbox);
 					trackers.push_back(trk);
 				}
@@ -76,10 +87,10 @@ void track_process(int cpuid)
 			else
 			{
 				// 预测已有跟踪器在当前帧的bbox
-				vector<Rect_<float>> predictedBoxes;
+				vector<cv::Rect_<float>> predictedBoxes;
 				for (auto it = trackers.begin(); it != trackers.end();)
 				{
-					Rect_<float> pBox = (*it).predict();
+					cv::Rect_<float> pBox = (*it).predict();
 					if (pBox.x >= 0 && pBox.y >= 0)
 					{
 						predictedBoxes.push_back(pBox);
@@ -94,13 +105,13 @@ void track_process(int cpuid)
 				unsigned int trkNum = 0;
 				unsigned int detNum = 0;
 				trkNum = predictedBoxes.size(); //由上一帧预测出来的结果
-				detNum = group.results.size(); //当前帧的所有检测结果的 视作传感器的结果
+				detNum = group.count; //当前帧的所有检测结果的 视作传感器的结果
 				iouMatrix.resize(trkNum, vector<double>(detNum, 0)); //提前开好空间 避免频繁重定位
 				for (unsigned int i = 0; i < trkNum; i++) // 计算IOU矩阵
 				{
 					for (unsigned int j = 0; j < detNum; j++)
 					{
-						iouMatrix[i][j] = 1 - box_iou(predictedBoxes[i], group.results[j].bbox);
+						iouMatrix[i][j] = 1 - box_iou(predictedBoxes[i], group.results[j].box.bbox);
 					}
 				}
 
@@ -151,7 +162,7 @@ void track_process(int cpuid)
 				for (unsigned int i = 0; i < trkNum; ++i)
 				{
 					if (assignment[i] == -1) continue;
-					if (1 - iouMatrix[i][assignment[i]] < iouThreshold)
+					if (1 - iouMatrix[i][assignment[i]] < IOU_THRESH)
 					{
 						unmatchedTrajectories.insert(i);
 						unmatchedDetections.insert(assignment[i]);
@@ -205,8 +216,8 @@ void track_process(int cpuid)
 			// 绘图
 			for (auto tb : frameTrackingResult)
 			{
-				cv::rectangle(img, tb.box.bbox, randColor[tb.track_id % CNUM], 2, 8, 0);
-				cv::putText(img, "Id:"+to_string(tb.id), cv::Point(tb.box.bbox.x, tb.box.bbox.y), 1, 1, randColor[tb.id % CNUM], 1);
+				cv::rectangle(img, tb.box.bbox, randColor[tb.track_id % COLORS_NUMBER], 2, 8, 0);
+				cv::putText(img, "Id:"+to_string(tb.track_id), cv::Point(tb.box.bbox.x, tb.box.bbox.y), 1, 1, randColor[tb.track_id % COLORS_NUMBER], 1);
 			}
 
 			imshow("rk3588",img);
@@ -216,7 +227,7 @@ void track_process(int cpuid)
 			idxShowImage++;
 
 			// 因为此时一定允许过至少一次videoRead 因此frame_cnt一定不为0
-			if (idxShowImage == Frame_cnt || waitKey(1) == 27) {
+			if (idxShowImage == Frame_cnt || cv::waitKey(1) == 27) {
 				cv::destroyAllWindows();
 				bReading = false;
 				bWriting = false;

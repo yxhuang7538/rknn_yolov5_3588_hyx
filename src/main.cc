@@ -19,6 +19,7 @@
 #include <dlfcn.h>
 #include "rknn_api.h"
 #include "global.h"
+#include "Hungarian.h"
 
 using namespace std;
 int main(const int argc, const char **argv)
