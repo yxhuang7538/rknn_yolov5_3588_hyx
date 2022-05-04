@@ -120,7 +120,7 @@ void videoWrite(int cpuid)
 	{
 		usleep(100);
 		cv::Mat img;
-		/*
+		
 		// 如果输出队列存在元素，就一直写入视频
 		if (queueOutput.size() > 0) {
 			mtxQueueOutput.lock();
@@ -129,7 +129,8 @@ void videoWrite(int cpuid)
 			mtxQueueOutput.unlock();
 			vid_writer.write(img); // Save-video
 		}
-		*/
+		
+		/*
 		if (queueShow.size() > 0)
 		{	
 			// 目前用来做检测
@@ -150,6 +151,7 @@ void videoWrite(int cpuid)
 			bWriting = false;
 			break;
 	    	}
+		*/
 		if(!bWriting)
 		{
 			//vid_writer.release();

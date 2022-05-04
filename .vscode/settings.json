@@ -15,7 +15,8 @@
         "atomic": "cpp",
         "thread": "cpp",
         "xstring": "cpp",
-        "xtree": "cpp"
+        "xtree": "cpp",
+        "mutex": "cpp"
     },
     "cmake.configureOnOpen": false
 }

@@ -60,6 +60,7 @@ void track_process(int cpuid)
 		{
 			cout << "待追踪的图片数： " << queueShow.size() << endl;
 			detect_result_group_t group = queueShow.front() // 取出图片检测结果group
+			cv::Mat img = group.img.clone();
 			queueShow.pop();
 			mtxQueueShow.unlock();
 			if (trackers.size() == 0) // 追踪器是空（第一帧 或者 跟踪目标丢失）
@@ -204,8 +205,8 @@ void track_process(int cpuid)
 			// 绘图
 			for (auto tb : frameTrackingResult)
 			{
-				cv::rectangle(group.img, tb.box.bbox, randColor[tb.track_id % CNUM], 2, 8, 0);
-				cv::putText(group.img, "Id:"+to_string(tb.id), cv::Point(tb.box.bbox.x, tb.box.bbox.y), 1, 1, randColor[tb.id % CNUM], 1);
+				cv::rectangle(img, tb.box.bbox, randColor[tb.track_id % CNUM], 2, 8, 0);
+				cv::putText(img, "Id:"+to_string(tb.id), cv::Point(tb.box.bbox.x, tb.box.bbox.y), 1, 1, randColor[tb.id % CNUM], 1);
 			}
 
 			imshow("rk3588",img);
